@@ -1,26 +1,29 @@
 /*
  * pipeline input parameters
  */
-params.reads = "$projectDir/data/test/*_{1,2}.fastq.gz"
 
+params.reads = "$projectDir/data/test/*_{1,2}.fastq.gz"
 params.multiqc = "./multiqc"
-params.outdir = "./results"
-params.adapter="$projectDir/assets/trimmomatic/adapter/TruSeq2-PE.fa"
+params.outdir = "$projectDir/data/test_results"
+params.adapter="$projectDir/assets/trimmomatic/adapters/TruSeq3-PE.fa"
+params.transcriptome_fasta="$projectDir/assets/transcriptomes/homo_sapiens/Homo_sapiens.GRCh38.cdna.all.fa"
 
 log.info """\
     R N A S E Q - N F   P I P E L I N E
     ===================================
-    transcriptome: ${params.transcriptome_file}
     reads        : ${params.reads}
+    transcriptome: ${params.transcriptome_fasta}
     outdir       : ${params.outdir}
+    adapter	 : ${params.adapter}
     """
     .stripIndent()
 
-/* fasted process
+/* fastqc process
  */
-
 process FASTQC {
     tag "FASTQC on $sample_id"
+
+    publishDir "${params.outdir}/$sample_id/qc_results", mode: 'copy'
 
     input:
     tuple val(sample_id), path(reads)
@@ -34,7 +37,6 @@ process FASTQC {
     """
 }
 
-
 process MULTIQC {
     publishDir params.outdir, mode:'copy'
 
@@ -42,7 +44,7 @@ process MULTIQC {
     path '*'
 
     output:
-    path '"$outdir"/multiqc_report.html'
+    path 'multiqc_report.html'
 
     script:
     """
@@ -50,56 +52,56 @@ process MULTIQC {
     """
 }
 
-
+/* Trimming process
+ */
 process TRIMMING {
     tag "Trimming on $sample_id"
+
+    publishDir "${params.outdir}/$sample_id/trim_results"
 
     input: 
     tuple val(sample_id), path(reads)
 
     output:
-    path '"$outdir"/trimmed_reads'
+    tuple val(sample_id), path("paired_${sample_id}_1.fastq.gz"), path("paired_${sample_id}_2.fastq.gz")
 
     script:
     """
-    trimmomatic.sh "$sample_id" "$reads" "$outdir" "$adapter"
+    trimmomatic.sh "$sample_id" "$reads" $params.adapter
     """
 }
 
-/*
- * define the `index` process that creates a binary index
- * given the transcriptome file
-
 process INDEX {
+    tag "Indexing using Kallisto"
+
     input:
     path transcriptome
 
     output:
-    path 'salmon_index'
+    path 'kallisto_index'
 
     script:
     """
-    salmon index --threads $task.cpus -t $transcriptome -i salmon_index
+    kallisto index -i kallisto_index $transcriptome
     """
 }
 
 process QUANTIFICATION {
-    tag "Salmon on $sample_id"
-    publishDir params.outdir, mode:'copy'
+    tag "Kallisto on $sample_id"
+    publishDir params.outdir, mode: 'copy'
 
     input:
-    path salmon_index
-    tuple val(sample_id), path(reads)
+    path kallisto_index
+    tuple val(sample_id), path(read_1), path(read_2)
 
     output:
     path "$sample_id"
 
     script:
     """
-    salmon quant --threads $task.cpus --libType=U -i $salmon_index -1 ${reads[0]} -2 ${reads[1]} -o $sample_id
+    kallisto quant -i $kallisto_index -o "$sample_id" -t 4 ${read_1} ${read_2} 
     """
 }
-*/
 
 workflow {
     Channel
@@ -107,7 +109,10 @@ workflow {
         .set { read_pairs_ch }
 
     fastqc_ch = FASTQC(read_pairs_ch)
-    MULTIQC(quant_ch.mix(fastqc_ch).collect())
+    multiqc_ch = MULTIQC(fastqc_ch.collect())
+    trimming_ch = TRIMMING(read_pairs_ch)
+    index_ch = INDEX(params.transcriptome_fasta)
+    quant_ch = QUANTIFICATION(index_ch, trimming_ch)
 }
 
 workflow.onComplete {

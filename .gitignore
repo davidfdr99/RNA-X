@@ -1,2 +1,6 @@
 .DS_STORE
 data/
+work/
+assets/transcriptomes/homo_sapiens/
+.nextflow/
+.nextflow.log*
