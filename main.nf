@@ -14,12 +14,13 @@
  *   GNU General Public License for more details.
  */
 
-params.reads = "$projectDir/data/test_reads/*_{1,2}.fastq.gz"
+params.reads = "$projectDir/data/airflow_reads/*_{1,2}.fastq.gz"
 params.outdir = "$projectDir/data/test_results"
 params.adapter="$projectDir/assets/trimmomatic/adapters/TruSeq3-PE.fa"
 params.transcriptome_fasta="$projectDir/assets/transcriptomes/gencode.v42.transcripts.fa.gz"
-params.annotation= null
+params.annotation="$projectDir/assets/transcriptomes/homo_sapiens/Homo_sapiens.GRCh38.96.gtf"
 params.chromosome_file="$projectDir/assets/transcriptomes/chromInfo.hg19.tsv"
+params.genomebam= "true"
 
 log.info """\
     R N A S E Q - N F   P I P E L I N E
@@ -31,11 +32,6 @@ log.info """\
     annotation   : ${params.annotation)
     """
     .stripIndent()
-
-/* Check if annotation file exists
- */
-
-annotationFile = file(params.annotation)
 
 /* fastqc process
  */
@@ -122,11 +118,11 @@ process QUANTIFICATION {
     path "kallisto_${sample_id}"
 
     script:
-    if ( !annotationFile.exists() )
+    if ( $params.genomebam = false )
         """
         kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 --pseudobam ${read_1} ${read_2} 
         """
-    if ( annotationFile.exists() )
+    else
         """
         kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 --genomebam --gtf $annotationFile --chromosomes $params.chromosome_file ${read_1} ${read_2}
         """
