@@ -18,3 +18,7 @@ do
 done < $1
 
 echo "Cleaned."
+
+for f in ./*_{1,2}.fastq; do
+    gzip "$f" &
+done
