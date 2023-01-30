@@ -109,13 +109,14 @@ process QUANTIFICATION {
     path "kallisto_${sample_id}"
 
     script:
-    if (!annotationFile)
+    if ( !annotationFile.exists() )
         """
         kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 ${read_1} ${read_2} --pseudobam
         """
-    else
+    if ( annotationFile.exists() )
         """
         kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 ${read_1} ${read_2} --genomebam --chromosomes
+        """
 }
 
 workflow {
