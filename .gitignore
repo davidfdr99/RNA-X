@@ -5,3 +5,5 @@ assets/transcriptomes/homo_sapiens/
 .nextflow/
 .nextflow.log
 .nextflow.log.*
+metadata.rtf
+data/metadata/
