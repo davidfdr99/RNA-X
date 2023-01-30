@@ -3,4 +3,5 @@ data/
 work/
 assets/transcriptomes/homo_sapiens/
 .nextflow/
-.nextflow.log*
+.nextflow.log
+.nextflow.log.*

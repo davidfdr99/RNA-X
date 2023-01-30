@@ -3,7 +3,6 @@
  */
 
 params.reads = "$projectDir/data/test/*_{1,2}.fastq.gz"
-params.multiqc = "./multiqc"
 params.outdir = "$projectDir/data/test_results"
 params.adapter="$projectDir/assets/trimmomatic/adapters/TruSeq3-PE.fa"
 params.transcriptome_fasta="$projectDir/assets/transcriptomes/gencode.v42.transcripts.fa.gz"
