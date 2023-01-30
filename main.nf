@@ -37,18 +37,20 @@ log.info """\
 process FASTQC {
     tag "FASTQC on $sample_id"
 
-    publishDir "${params.outdir}/$sample_id/qc_results", mode: 'copy'
+    publishDir "${params.outdir}/$sample_id", mode: 'copy'
 
     input:
     tuple val(sample_id), path(reads)
     tuple val(sample_id), path(trimmed_read_1), path(trimmed_read_2)
 
     output:
-    path "fastqc_${sample_id}_logs"
+    path "fastqc_${sample_id}_untrimmed"
+    path "fastqc_${sample_id}_trimmed"
 
     script:
     """
-    fastqc.sh "$sample_id" "$reads" "$trimmed_read_1" "$trimmed_read_2"
+    fastqc.sh "fastqc_${sample_id}_untrimmed" "${reads}"
+    fastqc.sh "fastqc_${sample_id}_trimmed" "${trimmed_read_1} ${trimmed_read_2}"
     """
 }
 
@@ -74,7 +76,7 @@ process MULTIQC {
 process TRIMMING {
     tag "Trimming on $sample_id"
 
-    publishDir "${params.outdir}/$sample_id/trim_results"
+    /* publishDir "${params.outdir}/$sample_id/trim_results" */
 
     input: 
     tuple val(sample_id), path(reads)
@@ -107,7 +109,7 @@ process INDEX {
 
 process QUANTIFICATION {
     tag "Kallisto on $sample_id"
-    publishDir params.outdir, mode: 'copy'
+    publishDir "$params.outdir/kallisto", mode: 'copy'
 
     input:
     path kallisto_index
@@ -118,7 +120,7 @@ process QUANTIFICATION {
 
     script:
     """
-    kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 --genomebam --gtf $annotationFile --chromosomes $params.chromosome_file ${read_1} ${read_2}
+    kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 --genomebam --gtf ${params.annotation} --chromosomes ${params.chromosome_file} ${read_1} ${read_2}
     """
 }
 
@@ -128,9 +130,9 @@ workflow {
         .set { read_pairs_ch }
 
     trimming_ch = TRIMMING(read_pairs_ch)
+    fastqc_ch = FASTQC(read_pairs_ch, trimming_ch)
     index_ch = INDEX(params.transcriptome_fasta)
     quant_ch = QUANTIFICATION(index_ch, trimming_ch)
-    fastqc_ch = FASTQC(read_pairs_ch, trimming_ch)
     MULTIQC(quant_ch.mix(fastqc_ch).collect())
 }
 
