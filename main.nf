@@ -6,6 +6,7 @@ params.reads = "$projectDir/data/test/*_{1,2}.fastq.gz"
 params.outdir = "$projectDir/data/test_results"
 params.adapter="$projectDir/assets/trimmomatic/adapters/TruSeq3-PE.fa"
 params.transcriptome_fasta="$projectDir/assets/transcriptomes/gencode.v42.transcripts.fa.gz"
+params.annotation= null
 
 log.info """\
     R N A S E Q - N F   P I P E L I N E
@@ -14,8 +15,14 @@ log.info """\
     transcriptome: ${params.transcriptome_fasta}
     outdir       : ${params.outdir}
     adapter	 : ${params.adapter}
+    annotation   : ${params.annotation)
     """
     .stripIndent()
+
+/* Check if annotation file exists
+ */
+
+annotationFile = file(params.annotation)
 
 /* fastqc process
  */
@@ -99,12 +106,16 @@ process QUANTIFICATION {
     tuple val(sample_id), path(read_1), path(read_2)
 
     output:
-    path "$sample_id"
+    path "kallisto_${sample_id}"
 
     script:
-    """
-    kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 ${read_1} ${read_2} 
-    """
+    if (!annotationFile)
+        """
+        kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 ${read_1} ${read_2} --pseudobam
+        """
+    else
+        """
+        kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 ${read_1} ${read_2} --genomebam --chromosomes
 }
 
 workflow {
