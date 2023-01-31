@@ -3,7 +3,8 @@
 # Shell script to fetch NGS data given a SRA Accession list with one accession per line
 
 echo "Started downloading SRAs..."
-while IFS= read -r 
+
+while IFS= read -r line
 do 
   prefetch "$line"
 done < $1
