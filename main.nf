@@ -14,8 +14,8 @@
  *   GNU General Public License for more details.
  */
 
-params.reads = "$projectDir/data/test_reads/*_{1,2}.fastq.gz"
-params.outdir = "$projectDir/data/test_results"
+params.reads = null
+params.outdir = "$projectDir/results"
 params.adapter="$projectDir/assets/trimmomatic/adapters/TruSeq3-PE.fa"
 params.transcriptome_fasta="$projectDir/assets/transcriptomes/gencode.v42.transcripts.fa.gz"
 params.annotation="$projectDir/assets/transcriptomes/homo_sapiens/Homo_sapiens.GRCh38.96.gtf"
