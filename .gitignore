@@ -1,11 +1,24 @@
 *.DS_STORE
+<<<<<<< HEAD
+=======
+data/airflow_reads/
+data/airflow_results/
+data/test_results/
+data/test_reads/*.fastq.gz
+data/test_reads/metadata/
+data/test_reads/metadata.rtf
+
+>>>>>>> ad409f2 (Update)
 work/
 assets/transcriptomes/homo_sapiens/
 .nextflow/
 .nextflow.log
 .nextflow.log.*
 
+<<<<<<< HEAD
 data/airflow_reads/
 data/airflow_results/
 data/test_reads/*.fastq.gz
 data/test_reads/metadata/
+=======
+>>>>>>> ad409f2 (Update)
