@@ -1,6 +1,11 @@
-.DS_STORE
-data/
+*.DS_STORE
 work/
 assets/transcriptomes/homo_sapiens/
 .nextflow/
-.nextflow.log*
+.nextflow.log
+.nextflow.log.*
+
+data/airflow_reads/
+data/airflow_results/
+data/test_reads/*.fastq.gz
+data/test_reads/metadata/
