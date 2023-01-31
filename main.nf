@@ -108,6 +108,7 @@ process INDEX {
 }
 
 process QUANTIFICATION {
+    memory '13 GB'
     tag "Kallisto on $sample_id"
     publishDir "$params.outdir/kallisto", mode: 'copy'
 
