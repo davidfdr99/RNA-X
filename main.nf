@@ -14,8 +14,8 @@
  *   GNU General Public License for more details.
  */
 
-params.reads = "$projectDir/data/test_reads/*_{1,2}.fastq.gz"
-params.outdir = "$projectDir/data/test_results"
+params.reads = null
+params.outdir = "$projectDir/results"
 params.adapter="$projectDir/assets/trimmomatic/adapters/TruSeq3-PE.fa"
 params.transcriptome_fasta="$projectDir/assets/transcriptomes/gencode.v42.transcripts.fa.gz"
 params.annotation="$projectDir/assets/transcriptomes/homo_sapiens/Homo_sapiens.GRCh38.96.gtf"
@@ -117,11 +117,26 @@ process QUANTIFICATION {
     tuple val(sample_id), path(read_1), path(read_2)
 
     output:
-    path "kallisto_${sample_id}"
+    path "kallisto"
 
     script:
     """
     kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 --genomebam --gtf ${params.annotation} --chromosomes ${params.chromosome_file} ${read_1} ${read_2}
+    """
+}
+
+process MERGEFILES {
+    publishDir "$params.outdir/kallisto", mode: 'copy'
+
+    input:
+    path "*"
+
+    output:
+    path "transcript_tpms_all_samples.tsv"
+
+    script:
+    """
+    transcriptome_all_files.sh .
     """
 }
 
@@ -135,6 +150,7 @@ workflow {
     index_ch = INDEX(params.transcriptome_fasta)
     quant_ch = QUANTIFICATION(index_ch, trimming_ch)
     MULTIQC(quant_ch.mix(fastqc_ch).collect())
+    MERGEFILES(quant_ch)
 }
 
 workflow.onComplete {
@@ -149,5 +165,5 @@ workflow.onComplete {
         """
         .stripIndent()
     
-    log.info ( workflow.success ? "\nDone! Open the following report in your browser --> $params.outdir/multiqc_report.html\n" : "Oops .. something went wrong" )
+    log.info ( workflow.success ? "\nDone! Open the following report in your browser --> $params.outdir/multiqc_report.html \nThe file containing tpm for all samples is stored here --> $params.outdir/kallisto/transcript_tpms_all_samples.tsv" : "Oops .. something went wrong" )
 }
