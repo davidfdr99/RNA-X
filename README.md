@@ -1,4 +1,4 @@
-# RNA-X
+# RNA-X <img src="assets/logo/rnax.png" align="right" height="200" />
 
 RNA-X is a nextflow implementation of a simple bulk RNA-seq pipeline using fastqc, trimmomatic and Kallisto.
 
