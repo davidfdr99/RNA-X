@@ -18,8 +18,8 @@ params.reads = null
 params.outdir = "$projectDir/results"
 params.adapter="$projectDir/assets/trimmomatic/adapters/TruSeq3-PE.fa"
 params.transcriptome_fasta="$projectDir/assets/transcriptomes/gencode.v42.transcripts.fa.gz"
-params.annotation="$projectDir/assets/transcriptomes/homo_sapiens/Homo_sapiens.GRCh38.96.gtf"
-params.chromosome_file="$projectDir/assets/transcriptomes/chromInfo.hg19.tsv"
+params.annotation= null
+params.chromosome_file= null
 
 log.info """\
        R N A - X    P I P E L I N E
@@ -28,7 +28,6 @@ log.info """\
     transcriptome: ${params.transcriptome_fasta}
     outdir       : ${params.outdir}
     adapter	 : ${params.adapter}
-    annotation   : ${params.annotation}
     """
     .stripIndent()
 
@@ -121,22 +120,7 @@ process QUANTIFICATION {
 
     script:
     """
-    kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 --genomebam --gtf ${params.annotation} --chromosomes ${params.chromosome_file} ${read_1} ${read_2}
-    """
-}
-
-process MERGEFILES {
-    publishDir "$params.outdir/kallisto", mode: 'copy'
-
-    input:
-    path "*"
-
-    output:
-    path "transcript_tpms_all_samples.tsv"
-
-    script:
-    """
-    transcriptome_all_files.sh .
+    kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 --pseudobam  ${read_1} ${read_2}
     """
 }
 
@@ -150,7 +134,6 @@ workflow {
     index_ch = INDEX(params.transcriptome_fasta)
     quant_ch = QUANTIFICATION(index_ch, trimming_ch)
     MULTIQC(quant_ch.mix(fastqc_ch).collect())
-    MERGEFILES(quant_ch)
 }
 
 workflow.onComplete {
