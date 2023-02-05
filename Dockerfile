@@ -42,7 +42,7 @@ ENV PATH="/opt/conda/bin:$PATH"
 
 RUN conda install -c conda-forge mamba
 
-COPY ../environment.yml .
+COPY environment.yml .
 
 RUN /bin/bash -c "time mamba env create -f environment.yml"
 

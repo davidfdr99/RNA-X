@@ -14,13 +14,6 @@
  *   GNU General Public License for more details.
  */
 
-params.reads = null
-params.outdir = "$projectDir/results"
-params.adapter="$projectDir/assets/trimmomatic/adapters/TruSeq3-PE.fa"
-params.transcriptome_fasta="$projectDir/assets/transcriptomes/gencode.v42.transcripts.fa.gz"
-params.annotation="$projectDir/assets/transcriptomes/homo_sapiens/Homo_sapiens.GRCh38.96.gtf"
-params.chromosome_file="$projectDir/assets/transcriptomes/chromInfo.hg19.tsv"
-
 log.info """\
        R N A - X    P I P E L I N E
     ===================================
@@ -36,8 +29,9 @@ log.info """\
  */
 process FASTQC {
     tag "FASTQC on $sample_id"
-
     publishDir "${params.outdir}/$sample_id", mode: 'copy'
+    container "https://depot.galaxyproject.org/singularity/fastqc:0.11.9--0"
+
 
     input:
     tuple val(sample_id), path(reads)
@@ -58,6 +52,7 @@ process FASTQC {
  */
 process MULTIQC {
     publishDir params.outdir, mode:'copy'
+    container "https://depot.galaxyproject.org/singularity/multiqc:1.12--pyhdfd78af_0"
 
     input:
     path '*'
@@ -74,9 +69,10 @@ process MULTIQC {
 /* Trimming process
  */
 process TRIMMING {
-    tag "Trimming on $sample_id"
+    label 'process_medium'
 
-    /* publishDir "${params.outdir}/$sample_id/trim_results" */
+    tag "Trimming on $sample_id"
+    container 'https://depot.galaxyproject.org/singularity/trimmomatic:0.35--hdfd78af_7'
 
     input: 
     tuple val(sample_id), path(reads)
@@ -94,6 +90,7 @@ process TRIMMING {
  */
 process INDEX {
     tag "Indexing using Kallisto"
+    container 'https://depot.galaxyproject.org/singularity/kallisto:0.48.0--h15996b6_2'
 
     input:
     path transcriptome
@@ -108,9 +105,11 @@ process INDEX {
 }
 
 process QUANTIFICATION {
-    memory '13 GB'
+    label 'process_high'
+
     tag "Kallisto on $sample_id"
     publishDir "$params.outdir/kallisto", mode: 'copy'
+    container 'https://depot.galaxyproject.org/singularity/kallisto:0.48.0--h15996b6_2'
 
     input:
     path kallisto_index
@@ -122,21 +121,6 @@ process QUANTIFICATION {
     script:
     """
     kallisto quant -i $kallisto_index -o "kallisto_${sample_id}" -t 4 --genomebam --gtf ${params.annotation} --chromosomes ${params.chromosome_file} ${read_1} ${read_2}
-    """
-}
-
-process MERGEFILES {
-    publishDir "$params.outdir/kallisto", mode: 'copy'
-
-    input:
-    path "*"
-
-    output:
-    path "transcript_tpms_all_samples.tsv"
-
-    script:
-    """
-    transcriptome_all_files.sh .
     """
 }
 
