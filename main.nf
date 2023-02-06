@@ -116,7 +116,7 @@ process QUANTIFICATION {
     tuple val(sample_id), path(read_1), path(read_2)
 
     output:
-    path "kallisto"
+    path "kallisto_${sample_id}"
 
     script:
     """
@@ -134,7 +134,6 @@ workflow {
     index_ch = INDEX(params.transcriptome_fasta)
     quant_ch = QUANTIFICATION(index_ch, trimming_ch)
     MULTIQC(quant_ch.mix(fastqc_ch).collect())
-    MERGEFILES(quant_ch)
 }
 
 workflow.onComplete {
@@ -149,5 +148,5 @@ workflow.onComplete {
         """
         .stripIndent()
     
-    log.info ( workflow.success ? "\nDone! Open the following report in your browser --> $params.outdir/multiqc_report.html \nThe file containing tpm for all samples is stored here --> $params.outdir/kallisto/transcript_tpms_all_samples.tsv" : "Oops .. something went wrong" )
+    log.info ( workflow.success ? "\nDone! Open the following report in your browser --> $params.outdir/multiqc_report.html : "Oops .. something went wrong" )
 }
